@@ -23,7 +23,7 @@ class DatastoreClient():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("host", help="display a square of a given number")
+    parser.add_argument("host", help="the ip of the host")
     args = parser.parse_args()
     print("Client is connecting to Server at {}:{}...".format(args.host, PORT))
     client = DatastoreClient(host=args.host)

@@ -9,6 +9,7 @@ import datastore_pb2
 import datastore_pb2_grpc
 import uuid
 import rocksdb
+import encodings
 
 from concurrent import futures
 
@@ -22,14 +23,13 @@ class MyDatastoreServicer(datastore_pb2.DatastoreServicer):
         print("put")
         key = uuid.uuid4().hex
         # TODO - save key and value into DB converting request.data string to utf-8 bytes 
-        
+        self.db.put(key.encode(), request.data.encode());
         return datastore_pb2.Response(data=key)
 
     def get(self, request, context):
         print("get")
         # TODO - retrieve the value from DB by the given key. Needs to convert request.data string to utf-8 bytes. 
-        value = None
-
+        value = (self.db.get(request.data.encode())).decode();
         return datastore_pb2.Response(data=value)
 
 def run(host, port):
