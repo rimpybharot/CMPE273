@@ -52,10 +52,11 @@ class EncoderServer(encoder_pb2.EncoderServicer):
         shorturl = ""
 
         while(my_id):
+            my_id = int(my_id)
             id1 = int(my_id%62)
             char1 = characters[id1]
             shorturl = shorturl + char1
-            my_id = int(my_id/62)
+            my_id = my_id/62
 
         shorturl = shorturl[::-1]
         print("Decode:\n", request)
