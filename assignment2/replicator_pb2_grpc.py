@@ -4,7 +4,7 @@ import grpc
 import replicator_pb2 as replicator__pb2
 
 
-class DatastoreStub(object):
+class ReplicatorStub(object):
   # missing associated documentation comment in .proto file
   pass
 
@@ -15,18 +15,18 @@ class DatastoreStub(object):
       channel: A grpc.Channel.
     """
     self.put = channel.unary_unary(
-        '/Datastore/put',
+        '/Replicator/put',
         request_serializer=replicator__pb2.Request.SerializeToString,
         response_deserializer=replicator__pb2.Response.FromString,
         )
     self.get = channel.unary_unary(
-        '/Datastore/get',
+        '/Replicator/get',
         request_serializer=replicator__pb2.Request.SerializeToString,
         response_deserializer=replicator__pb2.Response.FromString,
         )
 
 
-class DatastoreServicer(object):
+class ReplicatorServicer(object):
   # missing associated documentation comment in .proto file
   pass
 
@@ -45,7 +45,7 @@ class DatastoreServicer(object):
     raise NotImplementedError('Method not implemented!')
 
 
-def add_DatastoreServicer_to_server(servicer, server):
+def add_ReplicatorServicer_to_server(servicer, server):
   rpc_method_handlers = {
       'put': grpc.unary_unary_rpc_method_handler(
           servicer.put,
@@ -59,5 +59,5 @@ def add_DatastoreServicer_to_server(servicer, server):
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(
-      'Datastore', rpc_method_handlers)
+      'Replicator', rpc_method_handlers)
   server.add_generic_rpc_handlers((generic_handler,))
