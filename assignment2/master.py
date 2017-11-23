@@ -10,8 +10,7 @@ import replicator_pb2_grpc
 import uuid
 import rocksdb
 import encodings
-from Replicator import put_decorator
-from Replicator import get_decorator
+from Replicator import my_decorator
 import logging
 import filereader
 
@@ -20,69 +19,95 @@ from concurrent import futures
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
-slave_port = 3000
-
-
-#debug_count=0
 logging.basicConfig(filename='master.log', level=logging.DEBUG,
                     format='DB write event:%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 
-@put_decorator
-def put_replicator(key, value, debug_count):
+# @my_decorator
+# def replicator(key, value, debug_count):
 
-    print("Calling Put Replicator with " + key + " " + value)
-    master_db = rocksdb.DB("master1.db", rocksdb.Options(create_if_missing=True))
-    master_db.put(key.encode(), value.encode())
-    debug_count = debug_count + 1
-    logging.debug(str(debug_count) + "," + key + "," + value)
-    return key
-
-# @get_decorator
-# def get_replicator(key):
-
-#     print("Calling Get Replicator with " + key + " ")
-
+#     print("Calling Put Replicator with " + key + " " + value)
 #     master_db = rocksdb.DB("master1.db", rocksdb.Options(create_if_missing=True))
-#     value = (master_db.get(key.encode())).decode()
-#     print("Value of " + key + " in Master DB is " + value)
-#     return value
+#     master_db.put(key.encode(), value.encode())
+#     debug_count = debug_count + 1
+#     logging.debug(str(debug_count) + "," + key + "," + value)
+#     return key
 
 
 class MyReplicatorServicer(replicator_pb2.ReplicatorServicer):
     def __init__(self):
-        # self.master_db = rocksdb.DB("master1.db", rocksdb.Options(create_if_missing=True))
+        self.master_db = rocksdb.DB("master.db", rocksdb.Options(create_if_missing=True))
         self.debug_count = 0
+        self.key = 0
 
+    def my_decorator(self, function):
+        """Decorator Method"""
+        def wrapper(*args, **kwargs):
+            """Extra Wrapping"""
+            method_type = function.__name__
+            if method_type == "put":
+                value = args[0]
+                self.key = uuid.uuid4().hex
+            elif method_type == "delete":
+                value = ''
+                self.key = args[0]
+            # elif method_type == "update":
+            #     self.key = args[0]
+            #     value = args[1]
+
+            debug_count = self.debug_count + 1
+            logging.debug(str(debug_count) + "," + str(method_type) +"," + self.key + "," + value)
+            return function(*args, **kwargs)
+
+        return wrapper
+
+    @my_decorator
     def put(self, request, context):
-
-        # print("put")
-        key = uuid.uuid4().hex
+        """Put data in db"""
         value = request.data
-        # self.master_db.put(key.encode(), value.encode())
-        # m.replicator()
-        return replicator_pb2.Response(data=put_replicator(key, value, self.debug_count))
+        self.master_db.put(self.key.encode(), value.encode())
+        return replicator_pb2.Response(data=self.key)
+
+    # @my_decorator
+    # def update(self, request, context):
+    #     """Get data from DB"""
+    #     self.master_db.put(request.key.encode(), request.value.encode())
+    #     return replicator_pb2.Response(data=request.key)
+
+    @my_decorator
+    def delete(self, request, context):
+        """Get data from DB"""
+        return replicator_pb2.Response(data=(self.master_db.delete(request.data.encode())).decode())
 
     def get(self, request, context):
-        print("get")
+        """Get data from DB"""
+        return replicator_pb2.Response(data=(self.master_db.get(request.data.encode())).decode())
 
-        master_db = rocksdb.DB("master1.db", rocksdb.Options(create_if_missing=True))
+    def update_slave(self, request, context):
+        """Update the Slave"""
+        print(request.data)
 
-        return replicator_pb2.Response(data=(master_db.get(request.data.encode())).decode())
+        last_slave = filereader.comparator()
 
+        if last_slave != -1:
+            fileop = open("master_db.log", "r+")
+            lines = list(fileop)
+            if lines:
+                for line in lines:
+                    index = (line.split(",")[0]).split(":")[1]
+                    if int(index) >= int(last_slave)+1:
+                        method_type = line.split(",")[1]
+                        key = line.split(",")[2]
+                        value = line.split(",")[3]
+                        print("Yield to Slave")
+                        yield replicator_pb2.Updates(
+                            method_type = method_type,
+                            key = key,
+                            value = value
+                        )
 
-def check_difference(server, slave1):
-    try:
-        while True:
-            filereader.comparator()
-            time.sleep(5*60)
-    except KeyboardInterrupt:
-        server.stop(0)
-        slave1.stop(0)
-
-
-
-
+        else:
+            print("Slave is Up To Date!")
 
 def run(host, port):
     '''
@@ -93,23 +118,6 @@ def run(host, port):
     server.add_insecure_port('%s:%d' % (host, port))
     server.start()
     print("Server started at...%d" % port)
-
-    slave_channel = grpc.insecure_channel('%s:%d' % (host, slave_port))
-    slave_stub = replicator_pb2.ReplicatorStub(slave_channel)
-
-
-
-    slave1 = grpc.slave1(futures.ThreadPoolExecutor(max_workers=1))
-    replicator_pb2_grpc.add_ReplicatorServicer_to_server(MyReplicatorServicer(), slave1)
-    slave1.add_insecure_port('%s:%d' % (host, slave_channel))
-    slave1.start()
-    print("Server started at...%d" % slave_port)
-
-
-    check_difference(server, slave1)
-
-
-
 
 if __name__ == '__main__':
     run('0.0.0.0', 3000)
