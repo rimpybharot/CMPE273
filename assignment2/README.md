@@ -1,6 +1,6 @@
 How to run:
 
-Make sure there are no transaction error, else the app will fail because of not much exception handling has been done.
+Make sure there are no transaction error, else the app will fail because not much exception handling has been done.
 
 Tested with Docker, Dockefile is attached.
 
