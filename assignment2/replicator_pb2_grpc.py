@@ -24,6 +24,16 @@ class ReplicatorStub(object):
         request_serializer=replicator__pb2.Request.SerializeToString,
         response_deserializer=replicator__pb2.Response.FromString,
         )
+    self.delete = channel.unary_unary(
+        '/Replicator/delete',
+        request_serializer=replicator__pb2.Request.SerializeToString,
+        response_deserializer=replicator__pb2.Response.FromString,
+        )
+    self.update_slave = channel.unary_stream(
+        '/Replicator/update_slave',
+        request_serializer=replicator__pb2.Request.SerializeToString,
+        response_deserializer=replicator__pb2.Updates.FromString,
+        )
 
 
 class ReplicatorServicer(object):
@@ -44,6 +54,20 @@ class ReplicatorServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def delete(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def update_slave(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_ReplicatorServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -56,6 +80,16 @@ def add_ReplicatorServicer_to_server(servicer, server):
           servicer.get,
           request_deserializer=replicator__pb2.Request.FromString,
           response_serializer=replicator__pb2.Response.SerializeToString,
+      ),
+      'delete': grpc.unary_unary_rpc_method_handler(
+          servicer.delete,
+          request_deserializer=replicator__pb2.Request.FromString,
+          response_serializer=replicator__pb2.Response.SerializeToString,
+      ),
+      'update_slave': grpc.unary_stream_rpc_method_handler(
+          servicer.update_slave,
+          request_deserializer=replicator__pb2.Request.FromString,
+          response_serializer=replicator__pb2.Updates.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

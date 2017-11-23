@@ -10,63 +10,94 @@ import replicator_pb2_grpc
 import uuid
 import rocksdb
 import encodings
-from Replicator import my_decorator
 import logging
-import filereader
+from filereader import comparator
 
 from concurrent import futures
 
+
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
+logging.basicConfig(filename='master.log', filemode='w', level=logging.DEBUG,
+                    format='DB event:%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
-logging.basicConfig(filename='master.log', level=logging.DEBUG,
-                    format='DB write event:%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 
-# @my_decorator
-# def replicator(key, value, debug_count):
+def my_decorator(function):
+    """Decorator Method"""
+    
+    def wrapper(*args, **kwargs):
+        """Extra Wrapping"""
 
-#     print("Calling Put Replicator with " + key + " " + value)
-#     master_db = rocksdb.DB("master1.db", rocksdb.Options(create_if_missing=True))
-#     master_db.put(key.encode(), value.encode())
-#     debug_count = debug_count + 1
-#     logging.debug(str(debug_count) + "," + key + "," + value)
-#     return key
+        # print("wrapping")
+        method_type = function.__name__
+        if method_type == "put":
+            value = args[1].data
+            print(value)
+            MyReplicatorServicer.key = uuid.uuid4().hex
+        elif method_type == "delete":
+            value = ""
+            MyReplicatorServicer.key = args[1].data
+        # elif method_type == "update":
+        #     self.key = args[0]
+        #     value = args[1]
+
+        # debug_count = MyReplicatorServicer.debug_counter
+        MyReplicatorServicer.debug_counter = MyReplicatorServicer.debug_counter + 1
+
+
+        logging.debug(str(MyReplicatorServicer.debug_counter) + "," + str(method_type) +"," + str(MyReplicatorServicer.key) + "," + str(value))
+        return function(*args, **kwargs)
+
+    return wrapper
+
 
 
 class MyReplicatorServicer(replicator_pb2.ReplicatorServicer):
+    
+    debug_counter = 0;
+    key = 0;
+
     def __init__(self):
         self.master_db = rocksdb.DB("master.db", rocksdb.Options(create_if_missing=True))
-        self.debug_count = 0
-        self.key = 0
+        # self.debug_count = 0
+        # self.key = 0
 
-    def my_decorator(self, function):
-        """Decorator Method"""
-        def wrapper(*args, **kwargs):
-            """Extra Wrapping"""
-            method_type = function.__name__
-            if method_type == "put":
-                value = args[0]
-                self.key = uuid.uuid4().hex
-            elif method_type == "delete":
-                value = ''
-                self.key = args[0]
-            # elif method_type == "update":
-            #     self.key = args[0]
-            #     value = args[1]
+    # def my_decorator(function):
+    #     """Decorator Method"""
+       
+    #     def wrapper(*args, **kwargs):
+    #         """Extra Wrapping"""
 
-            debug_count = self.debug_count + 1
-            logging.debug(str(debug_count) + "," + str(method_type) +"," + self.key + "," + value)
-            return function(*args, **kwargs)
+    #         print("wrapping")
+    #         method_type = function.__name__
+    #         if method_type == "put":
+    #             value = args[0]
+    #             key = uuid.uuid4().hex
+    #         elif method_type == "delete":
+    #             value = ''
+    #             key = args[0]
+    #         # elif method_type == "update":
+    #         #     self.key = args[0]
+    #         #     value = args[1]
 
-        return wrapper
+    #         debug_count = self.debug_count + 1
+    #         logging.debug(str(debug_count) + "," + str(method_type) +"," + key + "," + value)
+    #         return function(*args, **kwargs)
+
+    #     return wrapper
 
     @my_decorator
     def put(self, request, context):
         """Put data in db"""
+        # self.key = uuid.uuid4().hex
         value = request.data
-        self.master_db.put(self.key.encode(), value.encode())
-        return replicator_pb2.Response(data=self.key)
+
+        print("BAck to original")
+
+        print(MyReplicatorServicer.key)
+        self.master_db.put(MyReplicatorServicer.key.encode(), value.encode())
+        return replicator_pb2.Response(data=MyReplicatorServicer.key)
 
     # @my_decorator
     # def update(self, request, context):
@@ -76,21 +107,37 @@ class MyReplicatorServicer(replicator_pb2.ReplicatorServicer):
 
     @my_decorator
     def delete(self, request, context):
-        """Get data from DB"""
-        return replicator_pb2.Response(data=(self.master_db.delete(request.data.encode())).decode())
+        """Delet data from DB"""
+
+        self.master_db.delete(request.data.encode())
+        return replicator_pb2.Response(data=request.data)
 
     def get(self, request, context):
         """Get data from DB"""
         return replicator_pb2.Response(data=(self.master_db.get(request.data.encode())).decode())
 
     def update_slave(self, request, context):
+
+
         """Update the Slave"""
+        
+        print("in master")
         print(request.data)
 
-        last_slave = filereader.comparator()
+        data_to_yied = replicator_pb2.Updates(
+            method_type = "put",
+            key = "key",
+            value = "value"
+        )
+
+        # for i in range(1, 100):
+        #     yield data_to_yied
+
+        
+        last_slave = comparator()
 
         if last_slave != -1:
-            fileop = open("master_db.log", "r+")
+            fileop = open("master.log", "r+")
             lines = list(fileop)
             if lines:
                 for line in lines:
@@ -100,14 +147,25 @@ class MyReplicatorServicer(replicator_pb2.ReplicatorServicer):
                         key = line.split(",")[2]
                         value = line.split(",")[3]
                         print("Yield to Slave")
-                        yield replicator_pb2.Updates(
+                        data_to_yied = replicator_pb2.Updates(
                             method_type = method_type,
                             key = key,
                             value = value
                         )
+                        yield data_to_yied
+
 
         else:
             print("Slave is Up To Date!")
+            data_to_yied = replicator_pb2.Updates(
+                method_type = "",
+                key = "",
+                value = ""
+            )
+            yield data_to_yied
+
+
+
 
 def run(host, port):
     '''
@@ -117,7 +175,13 @@ def run(host, port):
     replicator_pb2_grpc.add_ReplicatorServicer_to_server(MyReplicatorServicer(), server)
     server.add_insecure_port('%s:%d' % (host, port))
     server.start()
-    print("Server started at...%d" % port)
+    try:
+        while True:
+            print ("Server started at...%d" % port)
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except KeyboardInterrupt:
+        server.stop(0)
+
 
 if __name__ == '__main__':
     run('0.0.0.0', 3000)

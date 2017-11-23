@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='replicator.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x10replicator.proto\"\x17\n\x07Request\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x18\n\x08Response\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t2H\n\nReplicator\x12\x1c\n\x03put\x12\x08.Request\x1a\t.Response\"\x00\x12\x1c\n\x03get\x12\x08.Request\x1a\t.Response\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x10replicator.proto\"\x17\n\x07Request\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x18\n\x08Response\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\":\n\x07Updates\x12\x13\n\x0bmethod_type\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t2\x91\x01\n\nReplicator\x12\x1c\n\x03put\x12\x08.Request\x1a\t.Response\"\x00\x12\x1c\n\x03get\x12\x08.Request\x1a\t.Response\"\x00\x12\x1f\n\x06\x64\x65lete\x12\x08.Request\x1a\t.Response\"\x00\x12&\n\x0cupdate_slave\x12\x08.Request\x1a\x08.Updates\"\x00\x30\x01\x62\x06proto3')
 )
 
 
@@ -86,8 +86,54 @@ _RESPONSE = _descriptor.Descriptor(
   serialized_end=69,
 )
 
+
+_UPDATES = _descriptor.Descriptor(
+  name='Updates',
+  full_name='Updates',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='method_type', full_name='Updates.method_type', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='key', full_name='Updates.key', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='Updates.value', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=71,
+  serialized_end=129,
+)
+
 DESCRIPTOR.message_types_by_name['Request'] = _REQUEST
 DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
+DESCRIPTOR.message_types_by_name['Updates'] = _UPDATES
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Request = _reflection.GeneratedProtocolMessageType('Request', (_message.Message,), dict(
@@ -103,6 +149,13 @@ Response = _reflection.GeneratedProtocolMessageType('Response', (_message.Messag
   # @@protoc_insertion_point(class_scope:Response)
   ))
 _sym_db.RegisterMessage(Response)
+
+Updates = _reflection.GeneratedProtocolMessageType('Updates', (_message.Message,), dict(
+  DESCRIPTOR = _UPDATES,
+  __module__ = 'replicator_pb2'
+  # @@protoc_insertion_point(class_scope:Updates)
+  ))
+_sym_db.RegisterMessage(Updates)
 
 
 try:
@@ -135,6 +188,16 @@ try:
           request_serializer=Request.SerializeToString,
           response_deserializer=Response.FromString,
           )
+      self.delete = channel.unary_unary(
+          '/Replicator/delete',
+          request_serializer=Request.SerializeToString,
+          response_deserializer=Response.FromString,
+          )
+      self.update_slave = channel.unary_stream(
+          '/Replicator/update_slave',
+          request_serializer=Request.SerializeToString,
+          response_deserializer=Updates.FromString,
+          )
 
 
   class ReplicatorServicer(object):
@@ -155,6 +218,20 @@ try:
       context.set_details('Method not implemented!')
       raise NotImplementedError('Method not implemented!')
 
+    def delete(self, request, context):
+      # missing associated documentation comment in .proto file
+      pass
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def update_slave(self, request, context):
+      # missing associated documentation comment in .proto file
+      pass
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
 
   def add_ReplicatorServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -167,6 +244,16 @@ try:
             servicer.get,
             request_deserializer=Request.FromString,
             response_serializer=Response.SerializeToString,
+        ),
+        'delete': grpc.unary_unary_rpc_method_handler(
+            servicer.delete,
+            request_deserializer=Request.FromString,
+            response_serializer=Response.SerializeToString,
+        ),
+        'update_slave': grpc.unary_stream_rpc_method_handler(
+            servicer.update_slave,
+            request_deserializer=Request.FromString,
+            response_serializer=Updates.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -190,6 +277,14 @@ try:
       # missing associated documentation comment in .proto file
       pass
       context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def delete(self, request, context):
+      # missing associated documentation comment in .proto file
+      pass
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def update_slave(self, request, context):
+      # missing associated documentation comment in .proto file
+      pass
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
 
 
   class BetaReplicatorStub(object):
@@ -210,6 +305,15 @@ try:
       pass
       raise NotImplementedError()
     get.future = None
+    def delete(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      # missing associated documentation comment in .proto file
+      pass
+      raise NotImplementedError()
+    delete.future = None
+    def update_slave(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      # missing associated documentation comment in .proto file
+      pass
+      raise NotImplementedError()
 
 
   def beta_create_Replicator_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
@@ -219,16 +323,22 @@ try:
     file not marked beta) for all further purposes. This function was
     generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
     request_deserializers = {
+      ('Replicator', 'delete'): Request.FromString,
       ('Replicator', 'get'): Request.FromString,
       ('Replicator', 'put'): Request.FromString,
+      ('Replicator', 'update_slave'): Request.FromString,
     }
     response_serializers = {
+      ('Replicator', 'delete'): Response.SerializeToString,
       ('Replicator', 'get'): Response.SerializeToString,
       ('Replicator', 'put'): Response.SerializeToString,
+      ('Replicator', 'update_slave'): Updates.SerializeToString,
     }
     method_implementations = {
+      ('Replicator', 'delete'): face_utilities.unary_unary_inline(servicer.delete),
       ('Replicator', 'get'): face_utilities.unary_unary_inline(servicer.get),
       ('Replicator', 'put'): face_utilities.unary_unary_inline(servicer.put),
+      ('Replicator', 'update_slave'): face_utilities.unary_stream_inline(servicer.update_slave),
     }
     server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
     return beta_implementations.server(method_implementations, options=server_options)
@@ -241,16 +351,22 @@ try:
     file not marked beta) for all further purposes. This function was
     generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
     request_serializers = {
+      ('Replicator', 'delete'): Request.SerializeToString,
       ('Replicator', 'get'): Request.SerializeToString,
       ('Replicator', 'put'): Request.SerializeToString,
+      ('Replicator', 'update_slave'): Request.SerializeToString,
     }
     response_deserializers = {
+      ('Replicator', 'delete'): Response.FromString,
       ('Replicator', 'get'): Response.FromString,
       ('Replicator', 'put'): Response.FromString,
+      ('Replicator', 'update_slave'): Updates.FromString,
     }
     cardinalities = {
+      'delete': cardinality.Cardinality.UNARY_UNARY,
       'get': cardinality.Cardinality.UNARY_UNARY,
       'put': cardinality.Cardinality.UNARY_UNARY,
+      'update_slave': cardinality.Cardinality.UNARY_STREAM,
     }
     stub_options = beta_implementations.stub_options(host=host, metadata_transformer=metadata_transformer, request_serializers=request_serializers, response_deserializers=response_deserializers, thread_pool=pool, thread_pool_size=pool_size)
     return beta_implementations.dynamic_stub(channel, 'Replicator', cardinalities, options=stub_options)

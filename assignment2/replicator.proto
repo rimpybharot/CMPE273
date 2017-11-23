@@ -18,6 +18,5 @@ service Replicator {
    rpc put(Request) returns (Response) {}
    rpc get(Request) returns (Response) {}
    rpc delete(Request) return (Response) {}
-   rpc update_slave(Request) return (Updates)
+   rpc update_slave(Request) return (stream Updates)
 }
-

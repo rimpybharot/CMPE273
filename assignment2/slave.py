@@ -12,26 +12,43 @@ import rocksdb
 import encodings
 import argparse
 import sys
+import logging
 
 from concurrent import futures
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 MASTER_PORT = 3000
 
+
+logging.basicConfig(filename='slave.log', filemode='w', level=logging.DEBUG,
+                    format='DB event:%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+
+
 class SlaveUpdater(replicator_pb2.ReplicatorServicer):
     """Slave Class"""
+    debug = 0
     def __init__(self, host):
         self.slave_db = rocksdb.DB("slave.db", rocksdb.Options(create_if_missing=True))
-        self.master_channel = grpc.insecure_channel('%s:%d' % (host, MASTER_PORT))
-        self.stub = replicator_pb2.ReplicatorServicer(self.master_channel)
+        self.channel = grpc.insecure_channel('%s:%d' % (host, MASTER_PORT))
+        self.stub = replicator_pb2.ReplicatorStub(self.channel)
+
 
     def get_updates(self):
         """Get updates from master"""
-        resp = self.stub.update_slave("Requesting Updates!")
-        if resp.method_type == "put":
-            self.put(resp.key, resp.val)
-        elif resp.method_type == "delete":
-            self.delete(resp.key)
+        responses = self.stub.update_slave(replicator_pb2.Request(data="Send me data!"))
+        for resp in responses:
+            print(resp)
+            if resp.method_type == "put":
+                SlaveUpdater.debug = SlaveUpdater.debug + 1
+                logging.debug(str(SlaveUpdater.debug) + "," + "put" +"," + resp.key + "," + (resp.value).strip("\n"))
+                self.put(resp.key, resp.value)
+            elif resp.method_type == "delete":
+                SlaveUpdater.debug = SlaveUpdater.debug + 1
+                logging.debug(str(SlaveUpdater.debug) + "," + "delete" +"," + resp.key + "," + "")
+                self.delete(resp.key)
+            else:
+                print("Nothing to do")
+
 
     def put(self, key, value):
         """Put in Slave DB"""
@@ -43,18 +60,20 @@ class SlaveUpdater(replicator_pb2.ReplicatorServicer):
 
 def main():
     '''
-    Run the GRPC server
+    Run the Slave
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument("host", help="the ip of the server")
     args = parser.parse_args()
+    host=args.host
+    print(host)
     print("Slave is connecting to Server at {}:{}...".format(args.host, MASTER_PORT))
-    slave = SlaveUpdater(host=args.host)
+    slave = SlaveUpdater(host)
 
     try:
         while True:
+            time.sleep(10*60)
             slave.get_updates()
-            time.sleep(5*60)
     except KeyboardInterrupt:
         sys.exit("Slave Stopped")
 
