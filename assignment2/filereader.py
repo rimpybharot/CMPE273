@@ -60,5 +60,5 @@ def comparator(logfile):
 
 
 
-if __name__ == "__main__":
-    comparator()
+#if __name__ == "__main__":
+#    comparator()
