@@ -72,7 +72,7 @@ def main():
 
     try:
         while True:
-            time.sleep(10*60)
+            time.sleep(10)
             slave.get_updates()
     except KeyboardInterrupt:
         sys.exit("Slave Stopped")
