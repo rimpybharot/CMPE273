@@ -134,7 +134,7 @@ class MyReplicatorServicer(replicator_pb2.ReplicatorServicer):
         #     yield data_to_yied
 
         
-        last_slave = comparator(request.data+".log")
+        last_slave = comparator("slave.log")
 
         if last_slave != -1:
             fileop = open("master.log", "r+")
