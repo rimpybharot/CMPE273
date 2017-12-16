@@ -14,6 +14,4 @@ Run My_Client in Console 3:
 sudo docker run --net=host -it --rm --name a2-client -v "$PWD":/usr/src/myapp -w /usr/src/myapp ubuntu-python36-rocksdb-grpc:latest python3.6 my_client.py 0.0.0.0
 
 
-
-
 ![alt text](https://github.com/rimpybharot/CMPE273/blob/master/assignment2/Replicator.png)
