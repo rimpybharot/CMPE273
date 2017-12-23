@@ -11,12 +11,12 @@ message Response {
 message Updates {
     string method_type = 1;
     string key = 2;
-    strinh value = 3;
+    string value = 3;
 }
 
 service Replicator {
    rpc put(Request) returns (Response) {}
    rpc get(Request) returns (Response) {}
-   rpc delete(Request) return (Response) {}
-   rpc update_slave(Request) return (stream Updates)
+   rpc delete(Request) returns (Response) {}
+   rpc update_slave(Request) returns (stream Updates)
 }
